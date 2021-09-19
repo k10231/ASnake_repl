@@ -12,7 +12,7 @@ def runCode(code):
 
 def main(stdscr):
 
-    stdscr.nodelay(1)
+    # stdscr.nodelay(1)
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1)
     curses.echo()
