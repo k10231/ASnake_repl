@@ -12,7 +12,7 @@ def runCode(code):
 
 def main(stdscr):
 
-    # stdscr.nodelay(1)
+    # stdscr.nodelay(10)
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1)
     curses.echo()
@@ -25,8 +25,7 @@ def main(stdscr):
         c = stdscr.getch()
         y, x = stdscr.getyx()
 
-        code += 's'
-        # stdscr.addstr(y+1, x, code)
+        code += chr(c)
 
         if c == curses.KEY_LEFT:
             if not x < 5:
@@ -49,10 +48,12 @@ def main(stdscr):
                 stdscr.clear()
                 stdscr.refresh()
             else:
-                stdscr.move(y+1,x)
-                stdscr.addstr(runCode(code))
-                stdscr.addstr(">>> ", curses.color_pair(1))
-                code = ''
+                while runCode(code) is not None:
+                    stdscr.move(y+1,5)
+                    stdscr.addstr(runCode(code))
+                    # stdscr.addstr(">>> ", curses.color_pair(1))
+                    code = ''
+                    stdscr.refresh()
 
         
     stdscr.refresh()
