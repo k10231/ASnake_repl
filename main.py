@@ -3,11 +3,23 @@ import curses
 from ASnake import build, execPy
 import subprocess
 
-# import os
+import io
+from contextlib import redirect_stdout
+import platform
 
-def runCode(code):
-    asn = build(code, comment=False, optimize=False, debug=False, compileTo="Pyston", pythonVersion=3.9, enforceTyping=True)
-    return execPy(asn, fancy=False, pep=False, run=True, execTime=False, headless=False)
+compileDict={'CPython':'Python','PyPy':'PyPy3'}
+import sys
+if hasattr(sys, "pyston_version_info"):
+    # ^ Pyston dev's suggested this: https://github.com/pyston/pyston/issues/39
+    # What scaredy cats!!
+    compileTo = 'Pyston'
+else:
+    compileTo=compileDict[platform.python_implementation()]
+del sys
+
+def buildCode(code):
+    return build(code, comment=False, optimize=False, debug=False, compileTo=compileTo, pythonVersion=3.9, enforceTyping=True)
+    #return execPy(asn, fancy=False, pep=False, run=True, execTime=False, headless=False)
     # return subprocess.run(["python3", "-c", asn], capture_output=True, text=True)
 
 def main(stdscr):
@@ -16,46 +28,53 @@ def main(stdscr):
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1)
     curses.echo()
-    
+    stdout = io.StringIO()
+
     code = ''
     stdscr.addstr(">>> ", curses.color_pair(1))
 
     while True:
-
         c = stdscr.getch()
         y, x = stdscr.getyx()
-
-        code += chr(c)
 
         if c == curses.KEY_LEFT:
             if not x < 5:
                 stdscr.move(y, x-1) 
             
-        if c == curses.KEY_RIGHT:
+        elif c == curses.KEY_RIGHT:
             stdscr.move(y, x+1)
 
-        if c == curses.KEY_BACKSPACE:
-            if not x < 4:
-                stdscr.delch(y, x)
-                code = code[0:-2]
-                with open("streams.txt",'w',encoding = 'utf-8') as f:
-                    f.write(f"{code}\n")
-            else: 
-                stdscr.move(y, x+1)
+        elif c in {curses.KEY_BACKSPACE, 127}:
+            if x >= 7:
+                for _ in range(5):
+                    stdscr.delch(y, x)
+                    stdscr.move(y, x-3)
+                code = code[0:-1]
+                #with open("streams.txt",'w',encoding = 'utf-8') as f:
+                #    f.write(f"{code}\n")
+            else:
+                stdscr.move(y, x-2)
 
-        if c == curses.KEY_ENTER or c in [10, 13]:
+        elif c in {curses.KEY_ENTER, 10, 13}:
             if c <= y:
                 stdscr.clear()
                 stdscr.refresh()
             else:
-                while runCode(code) is not None:
-                    stdscr.move(y+1,5)
-                    stdscr.addstr(runCode(code))
-                    # stdscr.addstr(">>> ", curses.color_pair(1))
-                    code = ''
-                    stdscr.refresh()
 
-        
+                stdscr.move(y+1,0)
+                with redirect_stdout(stdout):
+                    exec(buildCode(code))
+                output=stdout.getvalue()
+                stdscr.addstr(output)
+                stdout = io.StringIO()
+                stdscr.move(y+1+output.count('\n'),0)
+                stdscr.addstr(">>> ", curses.color_pair(1))
+                code = ''
+                stdscr.refresh()
+        else:
+            code += chr(c)
+
+
     stdscr.refresh()
 
 
