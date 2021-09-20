@@ -1,6 +1,6 @@
 import time
 import curses
-from ASnake import build, execPy
+from ASnake import build, execPy, ASnakeVersion
 import subprocess
 
 import io
@@ -17,6 +17,8 @@ else:
     compileTo=compileDict[platform.python_implementation()]
 del sys
 
+ReplVersion='v0.2.0'
+
 # for debugging only
 def file_out(write_mode, *args):
     with open("streams.txt", write_mode ,encoding = 'utf-8') as f:
@@ -28,6 +30,8 @@ def buildCode(code):
     #return execPy(asn, fancy=False, pep=False, run=True, execTime=False, headless=False)
     # return subprocess.run(["python3", "-c", asn], capture_output=True, text=True)
 
+bash_history = []
+
 def main(stdscr):
 
     # stdscr.nodelay(10)
@@ -37,6 +41,7 @@ def main(stdscr):
     stdout = io.StringIO()
 
     code = ''
+    stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
     stdscr.addstr(">>> ", curses.color_pair(1))
 
     while True:
@@ -51,12 +56,18 @@ def main(stdscr):
         elif c == curses.KEY_RIGHT:
             stdscr.move(y, x+1)
 
+        # todo 
+        elif c == curses.KEY_UP:
+            pass 
+
         elif c in {curses.KEY_BACKSPACE, 127}:
             if not x < 4:
                 stdscr.delch(y, x)
-                code = code[0:-2]
+                code = code[0:-1]
+                file_out("w", code)
             else:
                 stdscr.move(y, x + 1)
+
         elif c in {curses.KEY_ENTER, 10, 13}:
             if y >= height-1:
                 stdscr.clear()
@@ -81,11 +92,12 @@ def main(stdscr):
                 stdout = io.StringIO()
                 # stdscr.move(y+1+output.count('\n'),0)
                 stdscr.addstr(">>> ", curses.color_pair(1))
+                # file_out("w", bash_history)
                 code = ''
                 stdscr.refresh()
+
         else:
             code += chr(c)
-
 
     stdscr.refresh()
 
