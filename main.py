@@ -17,6 +17,12 @@ else:
     compileTo=compileDict[platform.python_implementation()]
 del sys
 
+# for debugging only
+def file_out(write_mode, *args):
+    with open("streams.txt", write_mode ,encoding = 'utf-8') as f:
+        f.write(f"{args}\n")
+
+
 def buildCode(code):
     return build(code, comment=False, optimize=False, debug=False, compileTo=compileTo, pythonVersion=3.9, enforceTyping=True)
     #return execPy(asn, fancy=False, pep=False, run=True, execTime=False, headless=False)
@@ -36,6 +42,7 @@ def main(stdscr):
     while True:
         c = stdscr.getch()
         y, x = stdscr.getyx()
+        height, width = stdscr.getmaxyx()
 
         if c == curses.KEY_LEFT:
             if not x < 5:
@@ -51,18 +58,28 @@ def main(stdscr):
             else:
                 stdscr.move(y, x + 1)
         elif c in {curses.KEY_ENTER, 10, 13}:
-            if c <= y:
+            if y >= height-1:
                 stdscr.clear()
                 stdscr.refresh()
             else:
-
                 stdscr.move(y+1,0)
                 with redirect_stdout(stdout):
                     exec(buildCode(code))
                 output=stdout.getvalue()
-                stdscr.addstr(output)
+                # file_out("w", output.split("\n"), len(output.split("\n")))
+                out_arr = output.splitlines()
+
+                for i in range(len(out_arr)):
+                    y, _ = stdscr.getyx()
+                    if y >= height - 1:
+                        stdscr.clear()
+                        stdscr.addstr(f"{out_arr[i]}\n")
+                    else:
+                        stdscr.addstr(f"{out_arr[i]}\n")
+                    # file_out("a", out_arr[i], y)
+
                 stdout = io.StringIO()
-                stdscr.move(y+1+output.count('\n'),0)
+                # stdscr.move(y+1+output.count('\n'),0)
                 stdscr.addstr(">>> ", curses.color_pair(1))
                 code = ''
                 stdscr.refresh()
