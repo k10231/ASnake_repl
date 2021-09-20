@@ -17,13 +17,15 @@ else:
     compileTo=compileDict[platform.python_implementation()]
 del sys
 
-ReplVersion='v0.2.0'
+ReplVersion='v0.2.1'
 
 # for debugging only
 def file_out(write_mode, *args):
     with open("streams.txt", write_mode ,encoding = 'utf-8') as f:
         f.write(f"{args}\n")
 
+def remove_char(word, idx):
+    return ''.join(x for x in word if word.index(x) != idx)
 
 def buildCode(code):
     return build(code, comment=False, optimize=False, debug=False, compileTo=compileTo, pythonVersion=3.9, enforceTyping=True)
@@ -46,6 +48,8 @@ def main(stdscr):
 
     while True:
         c = stdscr.getch()
+
+        # notetoself: x and y are cursor position
         y, x = stdscr.getyx()
         height, width = stdscr.getmaxyx()
 
@@ -56,15 +60,15 @@ def main(stdscr):
         elif c == curses.KEY_RIGHT:
             stdscr.move(y, x+1)
 
-        # todo 
+        # todo -> bash history
         elif c == curses.KEY_UP:
             pass 
 
         elif c in {curses.KEY_BACKSPACE, 127}:
-            if not x < 4:
+            if not x < 4:                    
                 stdscr.delch(y, x)
-                code = code[0:-1]
-                file_out("w", code)
+                code = remove_char(code, x-4) 
+                # file_out("a", code)
             else:
                 stdscr.move(y, x + 1)
 
@@ -101,5 +105,6 @@ def main(stdscr):
 
     stdscr.refresh()
 
+if __name__ == "__main__":
+    curses.wrapper(main)
 
-curses.wrapper(main)
