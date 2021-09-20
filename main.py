@@ -45,16 +45,11 @@ def main(stdscr):
             stdscr.move(y, x+1)
 
         elif c in {curses.KEY_BACKSPACE, 127}:
-            if x >= 7:
-                for _ in range(5):
-                    stdscr.delch(y, x)
-                    stdscr.move(y, x-3)
-                code = code[0:-1]
-                #with open("streams.txt",'w',encoding = 'utf-8') as f:
-                #    f.write(f"{code}\n")
+            if not x < 4:
+                stdscr.delch(y, x)
+                code = code[0:-2]
             else:
-                stdscr.move(y, x-2)
-
+                stdscr.move(y, x + 1)
         elif c in {curses.KEY_ENTER, 10, 13}:
             if c <= y:
                 stdscr.clear()
