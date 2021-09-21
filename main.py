@@ -20,12 +20,13 @@ del sys, compileDict, platform
 
 ReplVersion = 'v0.2.1'
 
-
 # for debugging only
 def file_out(write_mode, *args):
     with open("streams.txt", write_mode, encoding='utf-8') as f:
         f.write(f"{args}\n")
 
+def remove_char(word, idx):
+    return ''.join(x for x in word if word.index(x) != idx)
 
 def remove_char(word, idx):
     return ''.join(x for x in word if word.index(x) != idx)
@@ -68,9 +69,10 @@ def main(stdscr):
             pass
 
         elif c in {curses.KEY_BACKSPACE, 127}:
-            if not x < 4:
+            if not x < 4:                    
                 stdscr.delch(y, x)
-                code = remove_char(code, x - 4)
+                code = remove_char(code, x-4) 
+
                 # file_out("a", code)
             else:
                 stdscr.move(y, x + 1)
@@ -109,7 +111,5 @@ def main(stdscr):
 
     stdscr.refresh()
 
-
 if __name__ == "__main__":
     curses.wrapper(main)
-
