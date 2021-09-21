@@ -1,5 +1,5 @@
 execGlobal=globals()
-
+from time import sleep
 import curses
 from ASnake import build, execPy, ASnakeVersion
 import subprocess
@@ -18,17 +18,16 @@ else:
     compileTo = compileDict[platform.python_implementation()]
 del sys, compileDict, platform
 
+
+# constants
 ReplVersion = 'v0.2.1'
+PREFIX = ">>> "
 
 
 # for debugging only
 def file_out(write_mode, *args):
     with open("streams.txt", write_mode, encoding='utf-8') as f:
         f.write(f"{args}\n")
-
-
-def remove_char(word, idx):
-    return ''.join(x for x in word if word.index(x) != idx)
 
 
 def buildCode(code):
@@ -51,21 +50,32 @@ def main(stdscr):
     stdout = io.StringIO()
 
     code = ''
+    codePosition=0
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
-    stdscr.addstr(">>> ", curses.color_pair(1))
+    stdscr.addstr(PREFIX, curses.color_pair(1))
 
     while True:
         c = stdscr.getch()
-
+        codeLength = len(code)
         # notetoself: x and y are cursor position
         y, x = stdscr.getyx()
         height, width = stdscr.getmaxyx()
 
+        if codePosition > codeLength:
+            codePosition = codeLength
+        elif codePosition < 0:
+            codePosition = 0
+
         if c == curses.KEY_LEFT:
             if not x < 5:
                 stdscr.move(y, x - 1)
+                if codePosition <= codeLength and x-len(PREFIX) <= codePosition:
+                    codePosition -= 1
 
         elif c == curses.KEY_RIGHT:
+            if codePosition < codeLength:
+                stdscr.addstr(code[codePosition])
+                codePosition += 1
             stdscr.move(y, x + 1)
 
         # todo -> bash history
@@ -75,7 +85,12 @@ def main(stdscr):
         elif c in {curses.KEY_BACKSPACE, 127}:
             if not x < 4:
                 stdscr.delch(y, x)
-                code = remove_char(code, x - 4)
+                if 0 < codePosition < len(code) - 1:
+                    tmpStart=codePosition-1 if codePosition-1 > 0 else 0
+                    code = code[:tmpStart] + code[codePosition:]
+                else:
+                    code = code[:-1]
+                codePosition -= 1
                 # file_out("a", code)
             else:
                 stdscr.move(y, x + 1)
@@ -103,14 +118,30 @@ def main(stdscr):
                     # file_out("a", out_arr[i], y)
 
                 stdout = io.StringIO()
-                # stdscr.move(y+1+output.count('\n'),0)
                 stdscr.addstr(">>> ", curses.color_pair(1))
                 # file_out("w", bash_history)
                 code = ''
+                codePosition = 0
                 stdscr.refresh()
 
         else:
-            code += chr(c)
+            if codePosition == len(code):
+                code += chr(c)
+                codePosition += 1
+            else:
+                if codePosition == 1:
+                    code = chr(c) + code[codePosition:]
+                else:
+                    code = code[:codePosition] + chr(c) + code[codePosition:]
+                    codePosition += 1
+
+                for xx in range(x - 1 + len(code[codePosition:]), x - 1, -1):
+                    stdscr.delch(y, xx)
+                stdscr.addstr(code[codePosition:])
+                stdscr.move(y, x)
+                stdscr.refresh()
+
+        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}")
 
     stdscr.refresh()
 
