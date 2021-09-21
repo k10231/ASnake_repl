@@ -28,15 +28,11 @@ def file_out(write_mode, *args):
 def remove_char(word, idx):
     return ''.join(x for x in word if word.index(x) != idx)
 
-def remove_char(word, idx):
-    return ''.join(x for x in word if word.index(x) != idx)
-
 
 def buildCode(code):
     return build(code, comment=False, optimize=False, debug=False, compileTo=compileTo, pythonVersion=3.9,enforceTyping=True)
 
 
-bash_history = []
 
 
 def main(stdscr):
@@ -49,6 +45,9 @@ def main(stdscr):
     code = ''
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
     stdscr.addstr(">>> ", curses.color_pair(1))
+
+    bash_history = ['none']
+    l_idx = [len(bash_history)]
 
     while True:
         c = stdscr.getch()
@@ -66,7 +65,28 @@ def main(stdscr):
 
         # todo -> bash history
         elif c == curses.KEY_UP:
-            pass
+            for i in range(x, 3, -1):
+                stdscr.delch(y, i)
+                
+            code = ''
+            if l_idx[0] >= 1:
+                # bash_history[l_idx[0]-1]
+                l_idx[0] -= 1 
+                stdscr.addstr(bash_history[l_idx[0]])
+                code += bash_history[l_idx[0]]
+                file_out("a", "up-> ", l_idx[0], bash_history[l_idx[0]])
+
+        elif c == curses.KEY_DOWN:
+            for i in range(x, 3, -1):
+                stdscr.delch(y, i)
+                
+            code = ''
+            if l_idx[0] <= len(bash_history)+1:
+                # bash_history[l_idx[0]]
+                l_idx[0] += 1 
+                stdscr.addstr(bash_history[l_idx[0]])
+                code += bash_history[l_idx[0]]
+                file_out("a", "down-> ", l_idx[0], bash_history[l_idx[0]])
 
         elif c in {curses.KEY_BACKSPACE, 127}:
             if not x < 4:                    
@@ -78,6 +98,9 @@ def main(stdscr):
                 stdscr.move(y, x + 1)
 
         elif c in {curses.KEY_ENTER, 10, 13}:
+            bash_history.append(code)
+            l_idx[0] = len(bash_history)
+            # file_out("a", l_idx[0], "haha")
             if y >= height - 1:
                 stdscr.clear()
                 stdscr.refresh()
