@@ -29,6 +29,13 @@ def file_out(write_mode, *args):
     with open("streams.txt", write_mode, encoding='utf-8') as f:
         f.write(f"{args}\n")
 
+def get_hint(keyword_list, word):
+    # keyword_list should be sorted
+    for i in range(len(keyword_list)):
+        if word == "": break
+        if keyword_list[i][:len(word)] == word:
+            return keyword_list[i]
+            break
 
 def buildCode(code):
     global variableInformation
@@ -41,6 +48,7 @@ def buildCode(code):
 
 bash_history = []
 variableInformation = {}
+keyword_list =  ["and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return", "True", "try", "while", "with", "yield"] 
 
 def main(stdscr):
     # stdscr.nodelay(10)
@@ -82,6 +90,13 @@ def main(stdscr):
         elif c == curses.KEY_UP:
             pass
 
+        # tab -> for auto-complete feature
+        elif c == ord('\t'):
+            for i in range(x, 3, -1):
+                stdscr.delch(y, i)
+            # call get_hint function to return the word which fits :n-index of `code` variable 
+            stdscr.addstr(get_hint(keyword_list, code))
+        
         elif c in {curses.KEY_BACKSPACE, 127}:
             if not x < 4:
                 stdscr.delch(y, x)
