@@ -1,4 +1,7 @@
 execGlobal = globals()
+from enum import auto
+from os import altsep
+from re import L
 from time import sleep
 import curses
 from ASnake import build, execPy, ASnakeVersion
@@ -38,6 +41,18 @@ def get_hint(word):
             return value
     return ''
 
+last_character_by_human = 0 #nocluewhattoname
+after_appending = 0
+
+def display_hint(stdscr, y, x, code):
+    if get_hint(code) == '': return 
+    global after_appending
+    for i in range(after_appending, last_character_by_human, -1):
+        stdscr.delch(y, i)
+    after_appending = x+len(get_hint(code).split()[-1][len(code):])
+    file_out("w", after_appending, last_character_by_human)
+    stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
+    stdscr.move(y, x)
 
 def buildCode(code):
     global variableInformation
@@ -90,7 +105,8 @@ del keyword_list
 def main(stdscr):
     # stdscr.nodelay(10)
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_WHITE, -1)
+    curses.init_pair(1, curses.COLOR_WHITE, -1) #for usual text
+    curses.init_pair(2, curses.COLOR_CYAN, -1) #for
     curses.echo()
     stdout = io.StringIO()
 
@@ -99,7 +115,7 @@ def main(stdscr):
     code = ''
     codePosition = 0
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
-    stdscr.addstr(PREFIX, curses.color_pair(1))
+    stdscr.addstr(PREFIX, curses.color_pair(2))
 
     while True:
         c = stdscr.getch()
@@ -132,6 +148,9 @@ def main(stdscr):
         # tab -> for auto-complete feature
         elif c == ord('\t'):
             # call get_hint function to return the word which fits :n-index of `code` variable
+            # file_out("a", f"from tab {x}")
+            global after_appending
+            after_appending = x+1
             codeSplit = code.split()
             if codeSplit:
                 autocomplete: str = get_hint(codeSplit[-1])
@@ -190,7 +209,7 @@ def main(stdscr):
                     # file_out("a", out_arr[i], y)
 
                 stdout = io.StringIO()
-                stdscr.addstr(">>> ", curses.color_pair(1))
+                stdscr.addstr(PREFIX, curses.color_pair(2))
                 # file_out("w", bash_history)
                 code = ''
                 codePosition = 0
@@ -200,6 +219,10 @@ def main(stdscr):
             if codePosition == len(code):
                 code += chr(c)
                 codePosition += 1
+                # file_out("w", get_hint(code.split()[-1]))
+                global last_character_by_human
+                last_character_by_human = x
+                display_hint(stdscr, y, x, code.split()[-1]) 
             else:
                 if codePosition == 1:
                     code = chr(c) + code[codePosition:]
@@ -213,7 +236,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        # file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
