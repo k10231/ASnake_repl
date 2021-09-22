@@ -39,7 +39,7 @@ def get_hint(word):
 
 
 def buildCode(code):
-    global variableInformation, activeREPLVariables
+    global variableInformation
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
                    pythonVersion=3.9, enforceTyping=True, variableInformation=variableInformation,
                    outputInternals=True)
@@ -52,7 +52,6 @@ def buildCode(code):
 
 bash_history = []
 variableInformation = {}
-activeREPLVariables=[]
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
                 '__spec__', 'abs', 'all', 'and', 'any', 'ArithmeticError', 'as', 'ascii', 'assert', 'AssertionError',
                 'async', 'AttributeError', 'await', 'BaseException', 'bin', 'BlockingIOError', 'bool', 'break',
