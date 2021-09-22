@@ -8,11 +8,13 @@ from ASnake import build, execPy, ASnakeVersion
 import subprocess
 import io
 from contextlib import redirect_stdout
+from traceback import format_exc
 
+# v temporary
 import sys
 import platform
-
 compileDict = {'CPython': 'Python', 'PyPy': 'PyPy3'}
+# ^ temporary
 
 if hasattr(sys, "pyston_version_info"):
     # ^ Pyston dev's suggested this: https://github.com/pyston/pyston/issues/39
@@ -52,8 +54,7 @@ def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appe
     stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
     stdscr.move(y, x)
 
-def buildCode(code):
-    global variableInformation
+def buildCode(code,variableInformation = {}):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
                    pythonVersion=3.9, enforceTyping=True, variableInformation=variableInformation,
                    outputInternals=True)
@@ -61,11 +62,10 @@ def buildCode(code):
         variableInformation = output[2]
         for var in variableInformation:
             lookup[var]=var
-    return output[0]
+    return output[0], variableInformation
 
 
 bash_history = []
-variableInformation = {}
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
                 '__spec__', 'abs', 'all', 'and', 'any', 'ArithmeticError', 'as', 'ascii', 'assert', 'AssertionError',
                 'async', 'AttributeError', 'await', 'BaseException', 'bin', 'BlockingIOError', 'bool', 'break',
@@ -114,6 +114,7 @@ def main(stdscr):
     lastCursorX = 0
 
     code = ''
+    variableInformation = {}
     codePosition = 0
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
     stdscr.addstr(PREFIX, curses.color_pair(2))
@@ -196,8 +197,14 @@ def main(stdscr):
                     stdscr.delch(y, xx)
 
                 stdscr.move(y + 1, 0)
+                compiledCode, variableInformation = buildCode(code,variableInformation)
                 with redirect_stdout(stdout):
-                    exec(buildCode(code), execGlobal)
+                    try:
+                        exec(compiledCode, execGlobal)
+                    except:
+                        error=format_exc()
+                        stdscr.addstr(error, curses.color_pair(2)) # todo: make red !
+                        stdscr.move(y + error.count('\n') + 2, 0)
 
                 output = stdout.getvalue()
                 # file_out("w", output.split("\n"), len(output.split("\n")))
