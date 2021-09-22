@@ -43,8 +43,6 @@ def get_hint(word):
             return value
     return ''
 
-
-
 def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int):
     if get_hint(code) == '': return
     for i in range(after_appending, lastCursorX, -1):
@@ -63,7 +61,6 @@ def buildCode(code,variableInformation = {}):
         for var in variableInformation:
             lookup[var]=var
     return output[0], variableInformation
-
 
 bash_history = []
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
@@ -105,6 +102,7 @@ def main(stdscr):
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_WHITE, -1) # for usual text
     curses.init_pair(2, curses.COLOR_CYAN, -1) # for pretty prefix
+    curses.init_pair(3, curses.COLOR_RED, -1)
     curses.echo()
     stdout = io.StringIO()
 
@@ -203,7 +201,7 @@ def main(stdscr):
                         exec(compiledCode, execGlobal)
                     except:
                         error=format_exc()
-                        stdscr.addstr(error, curses.color_pair(2)) # todo: make red !
+                        stdscr.addstr(error, curses.color_pair(3))
                         stdscr.move(y + error.count('\n') + 2, 0)
 
                 output = stdout.getvalue()
@@ -249,7 +247,6 @@ def main(stdscr):
         #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
-
 
 if __name__ == "__main__":
     curses.wrapper(main)
