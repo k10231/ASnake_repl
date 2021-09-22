@@ -41,16 +41,14 @@ def get_hint(word):
             return value
     return ''
 
-last_character_by_human = 0 #nocluewhattoname
-after_appending = 0
 
-def display_hint(stdscr, y, x, code):
-    if get_hint(code) == '': return 
-    global after_appending
-    for i in range(after_appending, last_character_by_human, -1):
+
+def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int):
+    if get_hint(code) == '': return
+    for i in range(after_appending, lastCursorX, -1):
         stdscr.delch(y, i)
     after_appending = x+len(get_hint(code).split()[-1][len(code):])
-    file_out("w", after_appending, last_character_by_human)
+    file_out("w", after_appending, lastCursorX)
     stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
     stdscr.move(y, x)
 
@@ -105,12 +103,15 @@ del keyword_list
 def main(stdscr):
     # stdscr.nodelay(10)
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_WHITE, -1) #for usual text
-    curses.init_pair(2, curses.COLOR_CYAN, -1) #for
+    curses.init_pair(1, curses.COLOR_WHITE, -1) # for usual text
+    curses.init_pair(2, curses.COLOR_CYAN, -1) # for pretty prefix
     curses.echo()
     stdout = io.StringIO()
 
     extra = ''  # debug var
+
+    after_appending = 0
+    lastCursorX = 0
 
     code = ''
     codePosition = 0
@@ -149,7 +150,6 @@ def main(stdscr):
         elif c == ord('\t'):
             # call get_hint function to return the word which fits :n-index of `code` variable
             # file_out("a", f"from tab {x}")
-            global after_appending
             after_appending = x+1
             codeSplit = code.split()
             if codeSplit:
@@ -191,6 +191,10 @@ def main(stdscr):
                 stdscr.clear()
                 stdscr.refresh()
             else:
+                for xx in range(stdscr.getmaxyx()[0],PREFIXlen+codePosition-1,-1):
+                    # gets rid of auto-complete-suggestion when entering a new line
+                    stdscr.delch(y, xx)
+
                 stdscr.move(y + 1, 0)
                 with redirect_stdout(stdout):
                     exec(buildCode(code), execGlobal)
@@ -220,9 +224,8 @@ def main(stdscr):
                 code += chr(c)
                 codePosition += 1
                 # file_out("w", get_hint(code.split()[-1]))
-                global last_character_by_human
-                last_character_by_human = x
-                display_hint(stdscr, y, x, code.split()[-1]) 
+                lastCursorX = x
+                display_hint(stdscr, y, x, code.split()[-1],lastCursorX,after_appending)
             else:
                 if codePosition == 1:
                     code = chr(c) + code[codePosition:]
@@ -236,7 +239,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        # file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
