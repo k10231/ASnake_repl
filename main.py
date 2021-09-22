@@ -51,15 +51,19 @@ def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appe
     stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
     stdscr.move(y, x)
 
-def buildCode(code,variableInformation = {}):
+def buildCode(code,variableInformation):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
                    pythonVersion=3.9, enforceTyping=False, variableInformation=variableInformation,
                    outputInternals=True)
-    if variableInformation != output[2]:
-        variableInformation = output[2]
-        for var in variableInformation:
-            lookup[var]=var
-    return output[0], variableInformation
+    if isinstance(output,str):
+        # ASnake Syntax Error
+        return (output, variableInformation)
+    else:
+        if variableInformation != output[2]:
+            variableInformation = output[2]
+            for var in variableInformation:
+                lookup[var]=var
+        return (output[0], variableInformation)
 
 bash_history = []
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
@@ -195,6 +199,7 @@ def main(stdscr):
 
                 stdscr.move(y + 1, 0)
                 compiledCode, variableInformation = buildCode(code,variableInformation)
+                extra=(compiledCode,variableInformation)
                 with redirect_stdout(stdout):
                     try:
                         exec(compiledCode, execGlobal)
@@ -243,7 +248,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
