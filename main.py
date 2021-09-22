@@ -23,7 +23,7 @@ else:
 del sys, compileDict, platform
 
 # constants
-ReplVersion = 'v0.2.1'
+ReplVersion = 'v0.3.0'
 PREFIX = ">>> "
 PREFIXlen = len(PREFIX)
 
