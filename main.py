@@ -22,6 +22,7 @@ del sys, compileDict, platform
 # constants
 ReplVersion = 'v0.2.1'
 PREFIX = ">>> "
+PREFIXlen = len(PREFIX)
 
 
 # for debugging only
@@ -115,7 +116,7 @@ def main(stdscr):
         if c == curses.KEY_LEFT:
             if not x < 5:
                 stdscr.move(y, x - 1)
-                if codePosition <= codeLength and x - len(PREFIX) <= codePosition:
+                if codePosition <= codeLength and x - PREFIXlen <= codePosition:
                     codePosition -= 1
 
         elif c == curses.KEY_RIGHT:
@@ -136,11 +137,10 @@ def main(stdscr):
                 autocomplete: str = get_hint(codeSplit[-1])
                 if autocomplete != '':
                     # autocomplete found
-                    for i in range(x, 3, -1):
-                        stdscr.delch(y, i)
+                    stdscr.move(y, codePosition+PREFIXlen-len(codeSplit[-1]))
 
                     stdscr.addstr(autocomplete)
-                    code = ' '.join(codeSplit[:-1]) + autocomplete
+                    code = ' '.join(codeSplit[:-1]) + (' ' if len(codeSplit)>1 else '') + autocomplete
                     codePosition += len(autocomplete)-len(codeSplit[-1])
                 else:
                     # no autocomplete found
@@ -149,10 +149,11 @@ def main(stdscr):
                         stdscr.move(y,x-1)
                         stdscr.addstr(code[codePosition:])
                     # move to end of line
-                    stdscr.move(y, len(code)+len(PREFIX))
+                    stdscr.move(y, len(code)+PREFIXlen)
             elif codePosition == 0:
                 # at start of line with nothing
-                stdscr.move(y, len(PREFIX))
+                stdscr.move(y, PREFIXlen)
+
         elif c in {curses.KEY_BACKSPACE, 127}:
             if not x < 4:
                 stdscr.delch(y, x)
@@ -212,7 +213,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
