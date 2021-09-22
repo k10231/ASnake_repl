@@ -8,7 +8,6 @@ from ASnake import build, execPy, ASnakeVersion
 import subprocess
 import io
 from contextlib import redirect_stdout
-from traceback import format_exc
 
 # v temporary
 import sys
@@ -54,7 +53,7 @@ def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appe
 
 def buildCode(code,variableInformation = {}):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
-                   pythonVersion=3.9, enforceTyping=True, variableInformation=variableInformation,
+                   pythonVersion=3.9, enforceTyping=False, variableInformation=variableInformation,
                    outputInternals=True)
     if variableInformation != output[2]:
         variableInformation = output[2]
@@ -199,8 +198,8 @@ def main(stdscr):
                 with redirect_stdout(stdout):
                     try:
                         exec(compiledCode, execGlobal)
-                    except:
-                        error=format_exc()
+                    except Exception as e:
+                        error = compileTo+' '+e.__class__.__name__+':\n'+str(e)
                         stdscr.addstr(error, curses.color_pair(3))
                         stdscr.move(y + error.count('\n') + 2, 0)
 
