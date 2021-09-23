@@ -200,7 +200,7 @@ def main(stdscr):
 
                 stdscr.move(y + 1, 0)
                 compiledCode, variableInformation, metaInformation = buildCode(code,variableInformation,metaInformation)
-                extra=metaInformation
+                #extra=metaInformation
                 with redirect_stdout(stdout):
                     try:
                         exec(compiledCode, execGlobal)
@@ -249,7 +249,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
