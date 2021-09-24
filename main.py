@@ -3,15 +3,23 @@ from enum import auto
 from os import altsep
 from re import L
 from time import sleep
-import curses
 from ASnake import build, execPy, ASnakeVersion
 import subprocess
 import io
 from contextlib import redirect_stdout
 
+import platform
+if 'windows' in platform.system().lower():
+    try:
+        import curses
+    except ModuleNotFoundError:
+        print("curses not supported. Please install via something like:\npython -m pip install windows-curses")
+        exit()
+else:
+    import curses
+
 # v temporary
 import sys
-import platform
 compileDict = {'CPython': 'Python', 'PyPy': 'PyPy3'}
 # ^ temporary
 
@@ -176,7 +184,7 @@ def main(stdscr):
                 # at start of line with nothing
                 stdscr.move(y, PREFIXlen)
 
-        elif c in {curses.KEY_BACKSPACE, 127}:
+        elif c in {curses.KEY_BACKSPACE, 127, 8}:
             if not x < 4:
                 stdscr.delch(y, x)
                 if 0 < codePosition < len(code) - 1:
