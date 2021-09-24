@@ -51,10 +51,10 @@ def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appe
     stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
     stdscr.move(y, x)
 
-def buildCode(code,variableInformation):
+def buildCode(code,variableInformation,metaInformation):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
                    pythonVersion=3.9, enforceTyping=False, variableInformation=variableInformation,
-                   outputInternals=True)
+                   outputInternals=True, metaInformation=metaInformation)
     if isinstance(output,str):
         # ASnake Syntax Error
         return (output, variableInformation)
@@ -63,7 +63,7 @@ def buildCode(code,variableInformation):
             variableInformation = output[2]
             for var in variableInformation:
                 lookup[var]=var
-        return (output[0], variableInformation)
+        return (output[0], variableInformation, output[3])
 
 bash_history = []
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
@@ -116,6 +116,7 @@ def main(stdscr):
 
     code = ''
     variableInformation = {}
+    metaInformation = []
     codePosition = 0
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
     stdscr.addstr(PREFIX, curses.color_pair(2))
@@ -198,8 +199,8 @@ def main(stdscr):
                     stdscr.delch(y, xx)
 
                 stdscr.move(y + 1, 0)
-                compiledCode, variableInformation = buildCode(code,variableInformation)
-                extra=(compiledCode,variableInformation)
+                compiledCode, variableInformation, metaInformation = buildCode(code,variableInformation,metaInformation)
+                #extra=metaInformation
                 with redirect_stdout(stdout):
                     try:
                         exec(compiledCode, execGlobal)
@@ -248,7 +249,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
 
