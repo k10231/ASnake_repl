@@ -184,7 +184,7 @@ def main(stdscr):
                 # at start of line with nothing
                 stdscr.move(y, PREFIXlen)
 
-        elif c in {curses.KEY_BACKSPACE, 127}:
+        elif c in {curses.KEY_BACKSPACE, 127, 8}:
             if not x < 4:
                 stdscr.delch(y, x)
                 if 0 < codePosition < len(code) - 1:
