@@ -3,15 +3,23 @@ from enum import auto
 from os import altsep
 from re import L
 from time import sleep
-import curses
 from ASnake import build, execPy, ASnakeVersion
 import subprocess
 import io
 from contextlib import redirect_stdout
 
+import platform
+if 'windows' in platform.system().lower():
+    try:
+        import curses
+    except ModuleNotFoundError:
+        print("curses not supported. Please install via something like:\npython -m pip install windows-curses")
+        exit()
+else:
+    import curses
+
 # v temporary
 import sys
-import platform
 compileDict = {'CPython': 'Python', 'PyPy': 'PyPy3'}
 # ^ temporary
 
