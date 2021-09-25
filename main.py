@@ -167,6 +167,7 @@ def main(stdscr):
                 history_idx[0] -= 1
                 stdscr.addstr(bash_history[history_idx[0]])
                 code = bash_history[history_idx[0]]
+                codePosition += len(bash_history[history_idx[0]])
 
         elif c == curses.KEY_DOWN:
             if not history_idx[0] == 0:
@@ -174,6 +175,7 @@ def main(stdscr):
                 history_idx[0] += 1
                 stdscr.addstr(bash_history[history_idx[0]])
                 code = bash_history[history_idx[0]]
+                codePosition += len(bash_history[history_idx[0]])
             
         # tab -> for auto-complete feature
         elif c == ord('\t'):
@@ -222,7 +224,7 @@ def main(stdscr):
                 stdscr.clear()
                 stdscr.refresh()
             else:
-                # delete_line(stdscr=stdscr, start=stdscr.getmaxyx()[0], end=PREFIXlen+codePosition-1, step=-1, y=y)
+                delete_line(stdscr=stdscr, start=stdscr.getmaxyx()[0], end=PREFIXlen+codePosition-1, step=-1, y=y)
                 stdscr.move(y + 1, 0)
                 compiledCode, variableInformation, metaInformation = buildCode(code,variableInformation,metaInformation)
                 #extra=metaInformation
