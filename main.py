@@ -175,11 +175,15 @@ def main(stdscr):
         elif c == curses.KEY_UP:
             if history_idx > 0 :
                 # earlier history
+                if history_idx > len(bash_history):
+                    history_idx = len(bash_history)
                 history_idx -= 1
                 delete_line(stdscr=stdscr, start=x, end=PREFIXlen - 1, step=-1, y=y)
                 stdscr.addstr(bash_history[history_idx])
                 code = bash_history[history_idx]
                 codePosition += len(bash_history[history_idx])
+            else:
+                history_idx = 0
 
         elif c == curses.KEY_DOWN:
             if history_idx < len(bash_history)-1:
@@ -238,7 +242,7 @@ def main(stdscr):
                 stdscr.clear()
                 stdscr.refresh()
             else:
-                history_idx += 1
+                history_idx += 2
                 bash_history.append(code)
                 delete_line(stdscr=stdscr, start=stdscr.getmaxyx()[0], end=PREFIXlen + codePosition - 1, step=-1, y=y)
                 stdscr.move(y + 1, 0)
@@ -292,7 +296,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        # file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y} bi={history_idx}",extra)
 
     stdscr.refresh()
 
