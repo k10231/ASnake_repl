@@ -33,6 +33,12 @@ ReplVersion = 'v0.4.0'
 PREFIX = ">>> "
 PREFIXlen = len(PREFIX)
 
+# check for ASnake as it can't be appended in requirements.txt (for now)
+def perform_module_check():
+    import sys
+    if not 'ASnake' in sys.modules:
+        print("Install latest ASnake.py from https://github.com/AhriFoxSnek/ASnake")
+        exit()
 
 # for debugging only
 def file_out(write_mode, *args):
@@ -50,7 +56,7 @@ def get_hint(word):
 
 def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int, hinted: bool, maxX: int):
     if hinted: # delete last hint
-        clear_suggestion(stdscr=stdscr, start=lastCursorX, end=maxX, step=1, y=y)
+        clear_suggestion(stdscr=stdscr, start=lastCursorX+1, end=maxX, step=1, y=y)
         stdscr.delch(y, lastCursorX)
         stdscr.move(y, lastCursorX)
     if get_hint(code) == '':
@@ -225,7 +231,7 @@ def main(stdscr):
                 stdscr.move(y, PREFIXlen)
 
         elif c in {curses.KEY_BACKSPACE, 127, 8}:
-            l = x
+            # l = x - 1
             if not x < 4:
                 clear_suggestion(stdscr=stdscr, start=lastCursorX, end=width, step=1, y=y)
                 stdscr.delch(y, x)
@@ -233,11 +239,12 @@ def main(stdscr):
                 if 0 < codePosition < len(code) - 1:
                     tmpStart = codePosition - 1 if codePosition - 1 > 0 else 0
                     code = code[:tmpStart] + code[codePosition:]
+                    # display_hint(stdscr, y, x, code, 0, 0, False, 0)
                 else:
                     code = code[:-1]
                     file_out("a", get_hint(code))
-                    display_hint(stdscr, y, x, code, 0, 0, False, 0)
                 codePosition -= 1
+                display_hint(stdscr, y, x, code, 0, 0, False, 0)
             else:
                 stdscr.move(y, x + 1)
 
@@ -307,5 +314,6 @@ def main(stdscr):
 
 
 if __name__ == "__main__":
+    perform_module_check()
     curses.wrapper(main)
 
