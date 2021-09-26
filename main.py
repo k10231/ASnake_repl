@@ -2,9 +2,10 @@ execGlobal = globals()
 from ASnake import build, ASnakeVersion
 from io import StringIO
 from contextlib import redirect_stdout
+from textwrap import wrap
 
+import platform  # temp
 
-import platform # temp
 if 'windows' in platform.system().lower():
     try:
         import curses
@@ -33,12 +34,14 @@ ReplVersion = 'v0.4.0'
 PREFIX = ">>> "
 PREFIXlen = len(PREFIX)
 
+
 # check for ASnake as it can't be appended in requirements.txt (for now)
 def perform_module_check():
     import sys
     if not 'ASnake' in sys.modules:
         print("Install latest ASnake.py from https://github.com/AhriFoxSnek/ASnake")
         exit()
+
 
 # for debugging only
 def file_out(write_mode, *args):
@@ -55,8 +58,8 @@ def get_hint(word):
 
 
 def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int, hinted: bool, maxX: int):
-    if hinted: # delete last hint
-        clear_suggestion(stdscr=stdscr, start=lastCursorX+1, end=maxX, step=1, y=y)
+    if hinted:  # delete last hint
+        clear_suggestion(stdscr=stdscr, start=lastCursorX + 1, end=maxX, step=1, y=y)
         stdscr.delch(y, lastCursorX)
         stdscr.move(y, lastCursorX)
     if get_hint(code) == '':
@@ -73,10 +76,12 @@ def delete_line(stdscr, start, end, step, y):
     for i in range(start, end, step):
         stdscr.delch(y, i)
 
+
 def clear_suggestion(stdscr, start, end, step, y):
     delete_line(stdscr, start, end, step, y)
     stdscr.delch(y, start)
     stdscr.move(y, start)
+
 
 def buildCode(code, variableInformation, metaInformation):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
@@ -179,7 +184,7 @@ def main(stdscr):
 
         # todo -> bash history
         elif c == curses.KEY_UP:
-            if history_idx > 0 :
+            if history_idx > 0:
                 # earlier history
                 if history_idx > len(bash_history):
                     history_idx = len(bash_history)
@@ -192,7 +197,7 @@ def main(stdscr):
                 history_idx = 0
 
         elif c == curses.KEY_DOWN:
-            if history_idx < len(bash_history)-1:
+            if history_idx < len(bash_history) - 1:
                 # later history
                 history_idx += 1
                 delete_line(stdscr=stdscr, start=x, end=PREFIXlen - 1, step=-1, y=y)
@@ -235,7 +240,7 @@ def main(stdscr):
             if not x < 4:
                 clear_suggestion(stdscr=stdscr, start=lastCursorX, end=width, step=1, y=y)
                 stdscr.delch(y, x)
-                
+
                 if 0 < codePosition < len(code) - 1:
                     tmpStart = codePosition - 1 if codePosition - 1 > 0 else 0
                     code = code[:tmpStart] + code[codePosition:]
@@ -270,15 +275,17 @@ def main(stdscr):
                         stdscr.move(y + error.count('\n') + 2, 0)
 
                 output = stdout.getvalue()
-                out_arr = output.splitlines()
+                out_arr = wrap(output, width=width)
+                if out_arr:
+                    out_arr.append("\n")
 
                 for i in range(len(out_arr)):
                     y, _ = stdscr.getyx()
                     if y >= height - 1:
                         stdscr.clear()
-                        stdscr.addstr(f"{out_arr[i]}\n")
+                        stdscr.addstr(f"{out_arr[i]}")
                     else:
-                        stdscr.addstr(f"{out_arr[i]}\n")
+                        stdscr.addstr(f"{out_arr[i]}")
 
                 stdout = StringIO()
                 stdscr.addstr(PREFIX, curses.color_pair(2))
@@ -308,7 +315,7 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y} bi={history_idx}",extra)
+        # file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y} bi={history_idx}",extra)
 
     stdscr.refresh()
 
