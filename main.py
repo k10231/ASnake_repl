@@ -225,13 +225,18 @@ def main(stdscr):
                 stdscr.move(y, PREFIXlen)
 
         elif c in {curses.KEY_BACKSPACE, 127, 8}:
+            l = x
             if not x < 4:
+                clear_suggestion(stdscr=stdscr, start=lastCursorX, end=width, step=1, y=y)
                 stdscr.delch(y, x)
+                
                 if 0 < codePosition < len(code) - 1:
                     tmpStart = codePosition - 1 if codePosition - 1 > 0 else 0
                     code = code[:tmpStart] + code[codePosition:]
                 else:
                     code = code[:-1]
+                    file_out("a", get_hint(code))
+                    display_hint(stdscr, y, x, code, 0, 0, False, 0)
                 codePosition -= 1
             else:
                 stdscr.move(y, x + 1)
