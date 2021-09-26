@@ -1,14 +1,10 @@
 execGlobal = globals()
-# from enum import auto
-# from os import altsep
-# from re import L
-# from time import sleep
 from ASnake import build, ASnakeVersion
-# import subprocess
-import io
+from io import StringIO
 from contextlib import redirect_stdout
 
-import platform
+
+import platform # temp
 if 'windows' in platform.system().lower():
     try:
         import curses
@@ -20,6 +16,7 @@ else:
 
 # v temporary
 import sys
+
 compileDict = {'CPython': 'Python', 'PyPy': 'PyPy3'}
 # ^ temporary
 
@@ -45,38 +42,50 @@ def file_out(write_mode, *args):
 
 def get_hint(word):
     if word == "": return ''
-    for key,value in lookup.items():
+    for key, value in lookup.items():
         if key[:len(word)] == word:
             return value
     return ''
 
-def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int):
-    if get_hint(code) == '': return
+
+def display_hint(stdscr, y: int, x: int, code: str, lastCursorX: int, after_appending: int, hinted: bool, maxX: int):
+    if hinted: # delete last hint
+        clear_suggestion(stdscr=stdscr, start=lastCursorX, end=maxX, step=1, y=y)
+        stdscr.delch(y, lastCursorX)
+        stdscr.move(y, lastCursorX)
+    if get_hint(code) == '':
+        return False
     for i in range(after_appending, lastCursorX, -1):
         stdscr.delch(y, i)
-    after_appending = x+len(get_hint(code).split()[-1][len(code):])
-    # file_out("w", after_appending, lastCursorX)
-    stdscr.addstr(y, x+len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):], curses.color_pair(1) | curses.A_DIM)
+    stdscr.addstr(y, x + len(code.split()[-1][len(code):]), get_hint(code.split()[-1])[len(code):],
+                  curses.color_pair(1) | curses.A_DIM)
     stdscr.move(y, x)
+    return True
 
 
 def delete_line(stdscr, start, end, step, y):
     for i in range(start, end, step):
         stdscr.delch(y, i)
 
-def buildCode(code,variableInformation,metaInformation):
+def clear_suggestion(stdscr, start, end, step, y):
+    delete_line(stdscr, start, end, step, y)
+    stdscr.delch(y, start)
+    stdscr.move(y, start)
+
+def buildCode(code, variableInformation, metaInformation):
     output = build(code, comment=False, optimize=False, debug=False, compileTo=compileTo,
                    pythonVersion=3.9, enforceTyping=False, variableInformation=variableInformation,
                    outputInternals=True, metaInformation=metaInformation)
-    if isinstance(output,str):
+    if isinstance(output, str):
         # ASnake Syntax Error
         return (output, variableInformation)
     else:
         if variableInformation != output[2]:
             variableInformation = output[2]
             for var in variableInformation:
-                lookup[var]=var
+                lookup[var] = var
         return (output[0], variableInformation, output[3])
+
 
 bash_history = []
 keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__loader__', '__name__', '__package__',
@@ -104,28 +113,30 @@ keyword_list = ('__build_class__', '__debug__', '__doc__', '__import__', '__load
                 'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueError', 'vars',
                 'Warning', 'while', 'with', 'yield', 'ZeroDivisionError', 'zip',
 
-                #ASnake keywords
+                # ASnake keywords
                 'case', 'do', 'does', 'end', 'equals', 'greater', 'less', 'loop', 'minus', 'nothing', 'of', 'plus',
                 'power', 'remainder', 'than', 'then', 'times', 'until'
                 )
 lookup = {}
 for name in keyword_list:
-    lookup[name]=name
+    lookup[name] = name
 del keyword_list
+
 
 def main(stdscr):
     # stdscr.nodelay(10)
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_WHITE, -1) # for usual text
-    curses.init_pair(2, curses.COLOR_CYAN, -1) # for pretty prefix
+    curses.init_pair(1, curses.COLOR_WHITE, -1)  # for usual text
+    curses.init_pair(2, curses.COLOR_CYAN, -1)  # for pretty prefix
     curses.init_pair(3, curses.COLOR_RED, -1)
     curses.echo()
-    stdout = io.StringIO()
+    stdout = StringIO()
 
     extra = ''  # debug var
 
     after_appending = 0
-    lastCursorX = 0
+    lastCursorX: int
+    hinted: bool = False
 
     code = ''
     variableInformation = {}
@@ -134,7 +145,7 @@ def main(stdscr):
     stdscr.addstr(f"ASnake {ASnakeVersion} \nRepl {ReplVersion}\n\n")
     stdscr.addstr(PREFIX, curses.color_pair(2))
 
-    history_idx = [len(bash_history)]
+    history_idx = 0
 
     while True:
         c = stdscr.getch()
@@ -162,44 +173,49 @@ def main(stdscr):
 
         # todo -> bash history
         elif c == curses.KEY_UP:
-            if not abs(history_idx[0]) >= len(bash_history):
-                delete_line(stdscr=stdscr, start=x, end=3, step=-1, y=y)
-                history_idx[0] -= 1
-                stdscr.addstr(bash_history[history_idx[0]])
-                code = bash_history[history_idx[0]]
-                codePosition += len(bash_history[history_idx[0]])
+            if history_idx > 0 :
+                # earlier history
+                history_idx -= 1
+                delete_line(stdscr=stdscr, start=x, end=PREFIXlen - 1, step=-1, y=y)
+                stdscr.addstr(bash_history[history_idx])
+                code = bash_history[history_idx]
+                codePosition += len(bash_history[history_idx])
 
         elif c == curses.KEY_DOWN:
-            if not history_idx[0] == 0:
-                delete_line(stdscr=stdscr, start=x, end=3, step=-1, y=y)
-                history_idx[0] += 1
-                stdscr.addstr(bash_history[history_idx[0]])
-                code = bash_history[history_idx[0]]
-                codePosition += len(bash_history[history_idx[0]])
-            
+            if history_idx < len(bash_history)-1:
+                # later history
+                history_idx += 1
+                delete_line(stdscr=stdscr, start=x, end=PREFIXlen - 1, step=-1, y=y)
+                stdscr.addstr(bash_history[history_idx])
+                code = bash_history[history_idx]
+                codePosition += len(bash_history[history_idx])
+            else:
+                # the most down should be blank
+                history_idx = len(bash_history)
+                delete_line(stdscr=stdscr, start=x, end=PREFIXlen - 1, step=-1, y=y)
+
         # tab -> for auto-complete feature
         elif c == ord('\t'):
             # call get_hint function to return the word which fits :n-index of `code` variable
-            # file_out("a", f"from tab {x}")
-            after_appending = x+1
+            after_appending = x + 1
             codeSplit = code.split()
             if codeSplit:
                 autocomplete: str = get_hint(codeSplit[-1])
                 if autocomplete != '':
                     # autocomplete found
-                    stdscr.move(y, codePosition+PREFIXlen-len(codeSplit[-1]))
+                    stdscr.move(y, codePosition + PREFIXlen - len(codeSplit[-1]))
 
                     stdscr.addstr(autocomplete)
-                    code = ' '.join(codeSplit[:-1]) + (' ' if len(codeSplit)>1 else '') + autocomplete
-                    codePosition += len(autocomplete)-len(codeSplit[-1])
+                    code = ' '.join(codeSplit[:-1]) + (' ' if len(codeSplit) > 1 else '') + autocomplete
+                    codePosition += len(autocomplete) - len(codeSplit[-1])
                 else:
                     # no autocomplete found
                     if codePosition != codeLength:
                         # not at end of line
-                        stdscr.move(y,x-1)
+                        stdscr.move(y, x - 1)
                         stdscr.addstr(code[codePosition:])
                     # move to end of line
-                    stdscr.move(y, len(code)+PREFIXlen)
+                    stdscr.move(y, len(code) + PREFIXlen)
             elif codePosition == 0:
                 # at start of line with nothing
                 stdscr.move(y, PREFIXlen)
@@ -213,31 +229,31 @@ def main(stdscr):
                 else:
                     code = code[:-1]
                 codePosition -= 1
-                # file_out("a", code)
             else:
                 stdscr.move(y, x + 1)
 
         elif c in {curses.KEY_ENTER, 10, 13}:
-            bash_history.append(code)
-            
+
             if y >= height - 1:
                 stdscr.clear()
                 stdscr.refresh()
             else:
-                delete_line(stdscr=stdscr, start=stdscr.getmaxyx()[0], end=PREFIXlen+codePosition-1, step=-1, y=y)
+                history_idx += 1
+                bash_history.append(code)
+                delete_line(stdscr=stdscr, start=stdscr.getmaxyx()[0], end=PREFIXlen + codePosition - 1, step=-1, y=y)
                 stdscr.move(y + 1, 0)
-                compiledCode, variableInformation, metaInformation = buildCode(code,variableInformation,metaInformation)
-                #extra=metaInformation
+                compiledCode, variableInformation, metaInformation = buildCode(code, variableInformation,
+                                                                               metaInformation)
+                # extra=metaInformation
                 with redirect_stdout(stdout):
                     try:
                         exec(compiledCode, execGlobal)
                     except Exception as e:
-                        error = compileTo+' '+e.__class__.__name__+':\n'+str(e)
+                        error = compileTo + ' ' + e.__class__.__name__ + ':\n' + str(e)
                         stdscr.addstr(error, curses.color_pair(3))
                         stdscr.move(y + error.count('\n') + 2, 0)
 
                 output = stdout.getvalue()
-                # file_out("w", output.split("\n"), len(output.split("\n")))
                 out_arr = output.splitlines()
 
                 for i in range(len(out_arr)):
@@ -247,11 +263,9 @@ def main(stdscr):
                         stdscr.addstr(f"{out_arr[i]}\n")
                     else:
                         stdscr.addstr(f"{out_arr[i]}\n")
-                    # file_out("a", out_arr[i], y)
 
-                stdout = io.StringIO()
+                stdout = StringIO()
                 stdscr.addstr(PREFIX, curses.color_pair(2))
-                # file_out("w", bash_history)
                 code = ''
                 codePosition = 0
                 stdscr.refresh()
@@ -260,9 +274,12 @@ def main(stdscr):
             if codePosition == len(code):
                 code += chr(c)
                 codePosition += 1
-                # file_out("w", get_hint(code.split()[-1]))
                 lastCursorX = x
-                display_hint(stdscr, y, x, code.split()[-1],lastCursorX,after_appending)
+                if code[-1] != ' ':
+                    hinted = display_hint(stdscr, y, x, code.split()[-1], lastCursorX, after_appending, hinted, width)
+                else:
+                    # if a space is done on a suggestion, clear the suggestion
+                    clear_suggestion(stdscr=stdscr, start=lastCursorX, end=width, step=1, y=y)
             else:
                 if codePosition == 1:
                     code = chr(c) + code[codePosition:]
@@ -275,9 +292,10 @@ def main(stdscr):
                 stdscr.move(y, x)
                 stdscr.refresh()
 
-        #file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
+        # file_out('w', code,f"{codePosition}/{len(code)} x={x} y={y}",extra)
 
     stdscr.refresh()
+
 
 if __name__ == "__main__":
     curses.wrapper(main)
